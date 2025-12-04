@@ -1,5 +1,3 @@
-
-
 require("dotenv").config();
 const express = require("express");
 const cron = require("node-cron");
@@ -10,15 +8,12 @@ const CHAT_ID = process.env.CHAT_ID;
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: false });
 
-// ==== Функція для форматування повідомлення ====
 function buildMessage(baseText) {
   return `${baseText}\n\n✅ <a href="https://t.me/huyova_bila_tserkva">Хуйова Біла Церква</a> | <a href="https://t.me/xy_bts">Прислати новину</a>`;
 }
 
-// ==== Відправка курсу ====
 async function sendDailyRates() {
   try {
-    // Курси ПриватБанку
     const res = await fetch("https://api.privatbank.ua/p24api/pubinfo?json&exchange&coursid=5");
     const data = await res.json();
 
@@ -30,13 +25,11 @@ async function sendDailyRates() {
     const usdText = usd ? `🇺🇸Доллар: ${formatNumber(usd.buy)} / ${formatNumber(usd.sale)}` : "";
     const eurText = eur ? `🇪🇺Евро: ${formatNumber(eur.buy)} / ${formatNumber(eur.sale)}` : "";
 
-    // Курси крипти через CoinGecko
     const cryptoRes = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd");
     const cryptoData = await cryptoRes.json();
     const btc = cryptoData.bitcoin.usd;
     const eth = cryptoData.ethereum.usd;
 
-    // Формуємо повідомлення
     const text = `💱 <b>КУРС валют</b>\n(купівля / продаж)\n\n${usdText}\n${eurText}\n🪙 Bitcoin: ${btc}$\n🔷 ETH: ${eth}$`;
 
     await bot.sendMessage(CHAT_ID, buildMessage(text), { parse_mode: "HTML", disable_web_page_preview: true });
@@ -46,13 +39,32 @@ async function sendDailyRates() {
   }
 }
 
-// ==== Планування раз на день о 08:00 ====
-cron.schedule("00 08 * * *", () => {
-  console.log("Надсилаємо курс валют о 08:00…");
-  sendDailyRates();
-}, { timezone: "Europe/Kiev" });
+let lastSentDate = null;
 
-// ==== EXPRESS сервер ====
+setInterval(() => {
+  const now = new Date();
+  const kyivTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Kiev" }));
+  
+  const hours = kyivTime.getHours();
+  const minutes = kyivTime.getMinutes();
+  const today = kyivTime.toISOString().split("T")[0]; 
+
+  if (hours === 8 && minutes === 47 && lastSentDate !== today) {
+    console.log("⏰ 08:00 — відправляємо курс валют (точний час)");
+    lastSentDate = today;
+    sendDailyRates();
+    return;
+  }
+
+  if (hours > 8 && lastSentDate !== today) {
+    console.log("⏰ Прокинулись пізніше → відправляємо курс валют (пізній запуск)");
+    lastSentDate = today;
+    sendDailyRates();
+    return;
+  }
+
+}, 60 * 1000);
+
 const app = express();
 app.get("/", (req, res) => {
   res.send("Бот працює 🚀");
