@@ -45,7 +45,7 @@ async function sendDailyRates() {
   }
 }
 
-// ==== Щоденний відправка о 08:47 
+// ==== Щоденний відправка о 08:00 
 let lastSentDate = null;
 
 setInterval(() => {
@@ -55,9 +55,9 @@ setInterval(() => {
   const minutes = kyivTime.getMinutes();
   const today = kyivTime.toISOString().split("T")[0];
 
-  if (hours === 8 && minutes === 47 && lastSentDate !== today) {
+  if (hours === 8 && minutes === 0 && lastSentDate !== today) {
 
-    console.log("⏰ 08:47 — відправляємо курс валют");
+    console.log("⏰ 08:00 — відправляємо курс валют");
     lastSentDate = today;
     sendDailyRates();
   } else if (hours > 8 && lastSentDate !== today) {
