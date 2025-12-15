@@ -13,7 +13,7 @@ function buildMessage(baseText) {
 
 async function sendDailyRates() {
   try {
-    // Курси ПриватБанку
+    // ==== ПриватБанк
     const res = await fetch("https://api.privatbank.ua/p24api/pubinfo?json&exchange&coursid=5");
     const data = await res.json();
 
@@ -22,30 +22,44 @@ async function sendDailyRates() {
     const usd = data.find(d => d.ccy === "USD");
     const eur = data.find(d => d.ccy === "EUR");
 
-    const usdText = usd ? `🇺🇸Доллар: ${formatNumber(usd.buy)} / ${formatNumber(usd.sale)}` : "";
-    const eurText = eur ? `🇪🇺Евро: ${formatNumber(eur.buy)} / ${formatNumber(eur.sale)}` : "";
+    const usdText = usd ? `🇺🇸Долар: ${formatNumber(usd.buy)} / ${formatNumber(usd.sale)}` : "";
+    const eurText = eur ? `🇪🇺Євро: ${formatNumber(eur.buy)} / ${formatNumber(eur.sale)}` : "";
 
-    // Курси крипти через Binance
-    const btcRes = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT");
-    const ethRes = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT");
+    // ==== CoinGecko (Bitcoin + Ethereum)
+    const cryptoRes = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd"
+    );
+    const cryptoData = await cryptoRes.json();
 
-    const btcData = await btcRes.json();
-    const ethData = await ethRes.json();
+    const btcPrice = cryptoData.bitcoin?.usd
+      ? Math.round(cryptoData.bitcoin.usd)
+      : "N/A";
 
-    const btcPrice = btcData?.price ? parseFloat(btcData.price).toFixed(0) : "N/A";
-    const ethPrice = ethData?.price ? parseFloat(ethData.price).toFixed(0) : "N/A";
+    const ethPrice = cryptoData.ethereum?.usd
+      ? Math.round(cryptoData.ethereum.usd)
+      : "N/A";
 
-    // Формуємо повідомлення
-    const text = `💱 <b>КУРС валют</b>\n(купівля / продаж)\n\n${usdText}\n${eurText}\n🪙 Bitcoin: ${btcPrice}$\n🔷 ETH: ${ethPrice}$`;
+    // ==== Повідомлення
+    const text =
+      `💱 <b>КУРС ВАЛЮТ</b>\n(купівля / продаж)\n\n` +
+      `${usdText}\n` +
+      `${eurText}\n` +
+      `🪙 Bitcoin: ${btcPrice}$\n` +
+      `🔷 ETH: ${ethPrice}$`;
 
-    await bot.sendMessage(CHAT_ID, buildMessage(text), { parse_mode: "HTML", disable_web_page_preview: true });
+    await bot.sendMessage(
+      CHAT_ID,
+      buildMessage(text),
+      { parse_mode: "HTML", disable_web_page_preview: true }
+    );
+
     console.log("Курс відправлено ✅");
   } catch (err) {
-    console.error("Помилка при отриманні курсу:", err.message);
+    console.error("Помилка при отриманні курсу:", err);
   }
 }
 
-// ==== Щоденний відправка о 08:00 
+// ==== Щоденна відправка о 08:00 (Київ)
 let lastSentDate = null;
 
 setInterval(() => {
@@ -55,18 +69,16 @@ setInterval(() => {
   const minutes = kyivTime.getMinutes();
   const today = kyivTime.toISOString().split("T")[0];
 
-  if (hours === 8 && minutes === 0 && lastSentDate !== today) {
+  if ((hours === 8 && minutes === 0 && lastSentDate !== today) ||
+      (hours > 8 && lastSentDate !== today)) {
 
-    console.log("⏰ 08:00 — відправляємо курс валют");
-    lastSentDate = today;
-    sendDailyRates();
-  } else if (hours > 8 && lastSentDate !== today) {
-    console.log("⏰ Прокинулись пізніше → відправляємо курс валют");
+    console.log("⏰ Відправляємо курс валют");
     lastSentDate = today;
     sendDailyRates();
   }
 }, 60 * 1000);
 
+// ==== Express (для Render)
 const app = express();
 app.get("/", (req, res) => {
   res.send("Бот працює 🚀");
