@@ -8,7 +8,7 @@ const CHAT_ID = process.env.CHAT_ID;
 const bot = new TelegramBot(BOT_TOKEN, { polling: false });
 
 function buildMessage(baseText) {
-  return `${baseText}\n\n✅ <a href="https://t.me/huyova_bila_tserkva">Хуйова Біла Церква</a> | <a href="https://t.me/xy_bts">Прислати новину</a>`;
+  return `${baseText}\n\n✅ <a href="https://t.me/huyova_bila_tserkva">Хуйова Біла Церква</a> | <a href="https://t.me/xy_dmin">Прислати новину</a>`;
 }
 
 async function sendDailyRates() {
