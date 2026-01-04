@@ -2,13 +2,16 @@ require("dotenv").config();
 const express = require("express");
 const TelegramBot = require("node-telegram-bot-api");
 
+const path = require("path");
+const IMAGE_PATH = path.join(__dirname, "images", "1.jpg");
+
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: false });
 
 function buildMessage(baseText) {
-  return `${baseText}\n\n✅ <a href="https://t.me/huyova_bila_tserkva">Хуйова Біла Церква</a> | <a href="https://t.me/xy_bts">Прислати новину</a>`;
+  return `${baseText}\n\n✅ <a href="https://t.me/huyova_bila_tserkva">Хуйова Біла Церква</a> | <a href="https://t.me/xy_dmin">Прислати новину</a>`;
 }
 
 async function sendDailyRates() {
@@ -47,11 +50,14 @@ async function sendDailyRates() {
       `🪙 Bitcoin: ${btcPrice}$\n` +
       `🔷 ETH: ${ethPrice}$`;
 
-    await bot.sendMessage(
-      CHAT_ID,
-      buildMessage(text),
-      { parse_mode: "HTML", disable_web_page_preview: true }
-    );
+await bot.sendPhoto(
+  CHAT_ID,
+  IMAGE_PATH,
+  {
+    caption: buildMessage(text),
+    parse_mode: "HTML"
+  }
+);
 
     console.log("Курс відправлено ✅");
   } catch (err) {
