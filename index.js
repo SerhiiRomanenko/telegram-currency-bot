@@ -28,19 +28,22 @@ async function sendDailyRates() {
     const usdText = usd ? `🇺🇸Долар: ${formatNumber(usd.buy)} / ${formatNumber(usd.sale)}` : "";
     const eurText = eur ? `🇪🇺Євро: ${formatNumber(eur.buy)} / ${formatNumber(eur.sale)}` : "";
 
-    // ==== CoinGecko (Bitcoin + Ethereum)
-    const cryptoRes = await fetch(
-      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd"
-    );
-    const cryptoData = await cryptoRes.json();
 
-    const btcPrice = cryptoData.bitcoin?.usd
-      ? Math.round(cryptoData.bitcoin.usd)
-      : "N/A";
+const [btcRes, ethRes] = await Promise.all([
+  fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"),
+  fetch("https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT")
+]);
 
-    const ethPrice = cryptoData.ethereum?.usd
-      ? Math.round(cryptoData.ethereum.usd)
-      : "N/A";
+const btcData = await btcRes.json();
+const ethData = await ethRes.json();
+
+const btcPrice = btcData.price
+  ? Math.round(Number(btcData.price))
+  : "N/A";
+
+const ethPrice = ethData.price
+  ? Math.round(Number(ethData.price))
+  : "N/A";
 
     // ==== Повідомлення
     const text =
